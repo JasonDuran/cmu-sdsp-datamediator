@@ -37,8 +37,19 @@ all:
 	@echo "***************************************************************"
 	@false
 endif
+###############################################################################
+# Ensure $OCLINTHOME is defined
+###############################################################################
+ifeq ($(OCLINTHOME), )
+all:
+	@echo "***************************************************************"
+	@echo "The environment variable 'OCLINTHOME' is not set!"
+	@echo "To use this makefile you need to set OCLINTHOME to the directory"
+	@echo "where you have OCLINT installed."
+	@echo "***************************************************************"
+	@false
 endif
-
+endif
 ###############################################################################
 # Modify build flags for debug/release
 ###############################################################################
@@ -58,7 +69,6 @@ NDDSLIBS = -lnddscppz -lnddscz -lnddscorez
 endif
 endif
 
-
 LIBS = -L$(NDDSHOME)/lib/$(ARCH) $(NDDSLIBS) $(SYSLIBS)
 
 SOURCES = src/cmu-sdsp-datamediator.cpp
@@ -70,17 +80,20 @@ OBJECTS       = $(SOURCES_NODIR:%.cpp=objs/$(ARCH)/%.o)
 ###############################################################################
 # Build Rules
 ###############################################################################
+all: OCLINT $(ARCH)
+	@echo all
+	
 $(ARCH): $(DIRECTORIES) $(OBJECTS) $(EXECUTABLE:%=objs/$(ARCH)/%.o) \
 	       $(EXECUTABLE:%=objs/$(ARCH)/%.out)
 
-objs/$(ARCH)/%.out: objs/$(ARCH)/%.o 
+objs/$(ARCH)/%.out: objs/$(ARCH)/%.o
 	$(CXXLD) $(CXXLDFLAGS) $< -o $(@:%.out=%) $(LIBS)
 
 objs/$(ARCH)/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $(DEFINES) $(INCLUDES) -c $<
 
 # Here is how we create those subdirectories automatically.
-%.dir : 
+%.dir :
 	@echo "Checking directory $*"
 	@if [ ! -d $* ]; then \
 		echo "Making directory $*"; \
@@ -90,7 +103,7 @@ objs/$(ARCH)/%.o: src/%.cpp
 .PHONY: OCLINT
 
 OCLINT:
-	$(OCLINTHOME)/oclint -enable-clang-static-analyzer -stats -max-priority-3=1 $(SOURCES) -- -o $(EXECUTABLE) $(OBJECTS) $(LIBS)
+	$(OCLINTHOME)/bin/oclint -max-priority-3=1 -max-priority-2=1 -max-priority-1=1 $(SOURCES) -- ${CXXFLAGS} -c
 
 clean:
 	@rm -Rf objs/$(ARCH)

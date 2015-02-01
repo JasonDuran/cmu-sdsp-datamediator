@@ -7,11 +7,12 @@
 ###############################################################################
 ARCH=x64Linux3.xgcc4.6.3
 CXX = g++
-CXXFLAGS = -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -m64
+CXXFLAGS = -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -m64 -fpic
 CXXLD = g++
 CXXLDFLAGS = -m64 -static-libgcc
 SYSLIBS = -ldl -lnsl -lm -lpthread -lrt
 INCLUDES = -Isrc -Isrc/idl -I$(NDDSHOME)/include -I$(NDDSHOME)/include/ndds
+SHAREDFLAGS = -shared
 
 ###############################################################################
 # Ensure this Makefile is invoked with the right variable set
@@ -71,20 +72,29 @@ endif
 
 LIBS = -L$(NDDSHOME)/lib/$(ARCH) $(NDDSLIBS) $(SYSLIBS)
 
-SOURCES = src/cmu-sdsp-datamediator.cpp
+SOURCES = src/cmu-sdsp-datamediator-subscriber.cpp \
+	src/cmu-sdsp-datamediator-subscriber.cpp
+SHARESOURCES = src/cmu-sdsp-datamediator.cpp
 DIRECTORIES   = objs.dir objs/$(ARCH).dir
-EXECUTABLE    = cmu-sdsp-datamediator
+SHARED = cmu-sdsp-datamediator
+EXECUTABLE    = cmu-sdsp-datamediator-publisher cmu-sdsp-datamediator-subscriber
 SOURCES_NODIR = $(notdir $(SOURCES))
 OBJECTS       = $(SOURCES_NODIR:%.cpp=objs/$(ARCH)/%.o)
+SHARESOURCES_NODIR = $(notdir $(SHARESOURCES))
+SHAREDOBJS = = $(SOURCES_NODIR:%.cpp=objs/$(ARCH)/%.o)
 
 ###############################################################################
 # Build Rules
 ###############################################################################
-all: OCLINT $(ARCH)
-	@echo all
-	
+all: SHAREDLIB $(ARCH)
+
 $(ARCH): $(DIRECTORIES) $(OBJECTS) $(EXECUTABLE:%=objs/$(ARCH)/%.o) \
 	       $(EXECUTABLE:%=objs/$(ARCH)/%.out)
+
+SHAREDLIB: OCLINT $(DIRECTORIES) $(SHARED:%=objs/$(ARCH)/%.o) $(SHARED:%=objs/$(ARCH)/%.so)
+	       
+objs/$(ARCH)/%.so: objs/$(ARCH)/%.o	   
+	$(CXXLD) $(SHAREDFLAGS)  -o $@ $< 
 
 objs/$(ARCH)/%.out: objs/$(ARCH)/%.o
 	$(CXXLD) $(CXXLDFLAGS) $< -o $(@:%.out=%) $(LIBS)
@@ -103,7 +113,7 @@ objs/$(ARCH)/%.o: src/%.cpp
 .PHONY: OCLINT
 
 OCLINT:
-	$(OCLINTHOME)/bin/oclint -max-priority-3=1 -max-priority-2=1 -max-priority-1=1 $(SOURCES) -- ${CXXFLAGS} -c
+	$(OCLINTHOME)/bin/oclint -max-priority-3=1 -max-priority-2=1 -max-priority-1=1 $(SHARESOURCES) -- ${CXXFLAGS} -c
 
 clean:
 	@rm -Rf objs/$(ARCH)

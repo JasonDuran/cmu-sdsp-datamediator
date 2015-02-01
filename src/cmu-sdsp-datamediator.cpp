@@ -16,15 +16,6 @@ int main(void) {
 		if(cnt > 1) cnt++;
 		if(bvv > 1) bvv++;
 		bvv++;
-		if(bvv < 50) bvv++;
-		if(bvv < 50) bvv=bvv-1;
-		if(bvv > 10) bvv++;
-		if(bvv < 50) bvv++;
-		if(bvv < 50) bvv=bvv-1;
-		if(bvv > 10) bvv++;
-		if(bvv < 50) bvv++;
-		if(bvv < 50) bvv=bvv-1;
-		if(bvv > 10) bvv++;
 	}
 	return EXIT_SUCCESS;
 }
